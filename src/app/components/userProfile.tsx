@@ -1,12 +1,22 @@
 "use client";
 
 interface UserProfileProps {
-  userInfo: any;
+  userInfo: {
+    _id: string;
+    assignedCountry: string;
+    role: string;
+  };
 }
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-function Modal({ userInfo, onClose }: { userInfo: any; onClose: () => void }) {
+function Modal({
+  userInfo,
+  onClose,
+}: {
+  userInfo: { _id: string; assignedCountry: string; role: string };
+  onClose: () => void;
+}) {
   return (
     <div
       onClick={(e) => {

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import dbConnect from "../../lib/mongodb";
 import { Data } from "@/app/lib/models/User";
 
-export async function POST(request: any) {
+export async function POST(request: Request): Promise<Response> {
   try {
     await dbConnect();
 

@@ -1,32 +1,52 @@
 "use client";
-import { useUser } from "@clerk/nextjs";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import UpdateCountrydata from "./updateCountryData";
 
 interface DisplayCountryDataProps {
-  userInfo: any;
+  userInfo: {
+    _id: string;
+    assignedCountry: string;
+    role: string;
+  };
 }
 
 export default function DisplayCountryData({
   userInfo,
 }: DisplayCountryDataProps) {
-  const [data, setData] = useState<any>(null);
+  interface CountryData {
+    id: string;
+    title: string;
+    description: string;
+    country: string;
+    createdBy: string;
+    lastModifiedBy?: string;
+    email?: string;
+    modifiedBy?: string;
+  }
+
+  const [data, setData] = useState<CountryData[] | null>(null);
   const [country, setCountry] = useState<string>("India");
-  const [adminCountryData, setAdminCountryData] = useState<any>(null);
+  const [adminCountryData, setAdminCountryData] = useState<
+    CountryData[] | null
+  >(null);
   const [updateDataModel, setUpdateDataModel] = useState<boolean>(false);
-  const [updatingData, setUpdatingData] = useState<any>(null);
+  const [updatingData, setUpdatingData] = useState<CountryData | null>(null);
   useEffect(() => {
     const getCountryData = async () => {
-      const res = await axios.post("/api/getCountryData", {
-        country: userInfo.assignedCountry,
-      });
-      setData(res.data);
+      try {
+        const res = await axios.post("/api/getCountryData", {
+          country: userInfo.assignedCountry,
+        });
+        setData(res.data);
+      } catch (error: unknown) {
+        console.log("error fetching country data", error);
+      }
     };
     if (userInfo.role !== "admin") {
       getCountryData();
     }
-  }, []);
+  }, [userInfo.assignedCountry, userInfo.role]);
 
   useEffect(() => {
     const getCountryData = async () => {
@@ -35,10 +55,10 @@ export default function DisplayCountryData({
       });
 
       const updatedData = await Promise.all(
-        res.data.map(async (d: any) => {
+        res.data.map(async (d: CountryData) => {
           let modifiedBy = "";
-          if (d.lastModifiedBy != undefined) {
-            modifiedBy = await getEmailById(d.lastModifiedBy);
+          if (d.lastModifiedBy !== undefined) {
+            modifiedBy = (await getEmailById(d.lastModifiedBy)) || "none";
           } else {
             modifiedBy = "none";
           }
@@ -51,9 +71,9 @@ export default function DisplayCountryData({
     if (country && userInfo.role === "admin") {
       getCountryData();
     }
-  }, [country]);
+  }, [country, userInfo.role]);
 
-  const getEmailById = async (id: any) => {
+  const getEmailById = async (id: string): Promise<string | null> => {
     try {
       const res = await axios.post("/api/getUserById", { id: id });
       return res?.data?.email;
@@ -67,7 +87,7 @@ export default function DisplayCountryData({
     <div className="bg-red-400 p-2 rounded-md flex flex-col gap-2">
       {userInfo.role === "admin" ? (
         <select
-          onChange={(event) => {
+          onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
             event.preventDefault();
             setCountry(event.target.value);
           }}
@@ -86,7 +106,7 @@ export default function DisplayCountryData({
 
       {userInfo.role !== "admin" &&
         data &&
-        data.map((d: any) => {
+        data.map((d: CountryData) => {
           return (
             <div className="bg-slate-400 p-2" key={d.id}>
               <p>{d.id}</p>
@@ -99,14 +119,14 @@ export default function DisplayCountryData({
 
       {userInfo.role === "admin" &&
         adminCountryData &&
-        adminCountryData.map((d: any) => {
+        adminCountryData.map((d: CountryData) => {
           return (
             <div className="bg-slate-400 p-2" key={d.id}>
               <div className="flex justify-between">
                 <p>title: {d.title}</p>
                 <div className="flex gap-2">
                   <button
-                    onClick={(e) => {
+                    onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                       e.preventDefault();
                       setUpdatingData(d);
                       setUpdateDataModel(true);
@@ -116,7 +136,7 @@ export default function DisplayCountryData({
                     edit
                   </button>
                   <button
-                    onClick={(e) => {
+                    onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                       e.preventDefault();
                       setUpdatingData(d);
                       setUpdateDataModel(true);
@@ -139,7 +159,7 @@ export default function DisplayCountryData({
           );
         })}
 
-      {updateDataModel && (
+      {updateDataModel && updatingData && (
         <UpdateCountrydata
           data={updatingData}
           userInfo={userInfo}

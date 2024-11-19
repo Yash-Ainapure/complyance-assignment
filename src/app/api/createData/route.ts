@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/app/lib/mongodb";
 import { Data } from "@/app/lib/models/User";
+import { ObjectId } from "mongodb";
 
 export async function POST(request: Request) {
   try {
@@ -19,13 +20,15 @@ export async function POST(request: Request) {
     }
 
     // Convert createdBy to ObjectId
-    const { ObjectId } = require('mongodb');
     if (ObjectId.isValid(body.createdBy)) {
       body.createdBy = new ObjectId(body.createdBy);
     } else {
-      return new Response(JSON.stringify({ error: "Invalid createdBy value" }), {
-        status: 400,
-      });
+      return new Response(
+        JSON.stringify({ error: "Invalid createdBy value" }),
+        {
+          status: 400,
+        }
+      );
     }
 
     // Create a new data entry

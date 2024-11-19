@@ -3,9 +3,14 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 
 interface UpdateCountrydataProps {
-  userInfo: any;
+  userInfo: { _id: string };
   setUpdateDataModel: (value: boolean) => void;
-  data: any;
+  data: {
+    _id?: string;
+    title: string;
+    description: string;
+    country: string;
+  };
 }
 
 export default function UpdateCountrydata({
@@ -13,10 +18,17 @@ export default function UpdateCountrydata({
   setUpdateDataModel,
   data,
 }: UpdateCountrydataProps) {
-  const [newdata, setNewData] = useState<any>(null);
+  interface NewData {
+    _id?: string;
+    title: string;
+    description: string;
+    country: string;
+  }
+
+  const [newdata, setNewData] = useState<NewData | null>(null);
   useEffect(() => {
     setNewData(data);
-  }, []);
+  }, [data]);
   const [loading, setLoading] = useState<boolean>(false);
   return (
     <div className="inset-0 absolute w-full min-h-screen flex items-center justify-center bg-black bg-opacity-60">
@@ -35,7 +47,12 @@ export default function UpdateCountrydata({
             value={newdata?.title}
             required
             onChange={(e) => {
-              setNewData({ ...newdata, title: e.target.value });
+              setNewData({
+                ...newdata,
+                title: e.target.value,
+                description: newdata?.description || "",
+                country: newdata?.country || "",
+              });
             }}
             className="border"
             type="text"
@@ -45,7 +62,12 @@ export default function UpdateCountrydata({
             value={newdata?.description}
             required
             onChange={(e) => {
-              setNewData({ ...newdata, description: e.target.value });
+              setNewData({
+                ...newdata,
+                description: e.target.value,
+                title: newdata?.title || "",
+                country: newdata?.country || "",
+              });
             }}
             className="border"
             type="text"
@@ -54,7 +76,12 @@ export default function UpdateCountrydata({
           <select
             value={newdata?.country || ""}
             onChange={(e) => {
-              setNewData({ ...newdata, country: e.target.value });
+              setNewData({
+                ...newdata,
+                country: e.target.value,
+                title: newdata?.title || "",
+                description: newdata?.description || "",
+              });
             }}
             className="border"
           >
@@ -71,13 +98,18 @@ export default function UpdateCountrydata({
               e.preventDefault();
               try {
                 setLoading(true);
-                const res = await axios.put("/api/updateData", {
-                  id: newdata._id,
-                  title: newdata.title,
-                  description: newdata.description,
-                  country: newdata.country,
-                  updatingUser: userInfo._id,
-                });
+                if (newdata) {
+                  const res = await axios.put("/api/updateData", {
+                    id: newdata._id,
+                    title: newdata.title,
+                    description: newdata.description,
+                    country: newdata.country,
+                    updatingUser: userInfo._id,
+                  });
+                  console.log("res", res);
+                } else {
+                  console.log("newdata is null");
+                }
               } catch (err) {
                 console.log("error", err);
               } finally {

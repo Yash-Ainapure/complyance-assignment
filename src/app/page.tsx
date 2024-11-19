@@ -10,10 +10,16 @@ import { SignedIn, SignedOut } from "@clerk/nextjs";
 export default function Home() {
   const { user } = useUser();
   const [createDataModel, setCreateDataModel] = useState<boolean>(false);
+
   const [userInfo, setUserInfo] = useState<{
-    assignedCountry?: string;
-    role?: string;
-  } | null>(null);
+    _id: string;
+    assignedCountry: string;
+    role: string;
+  }>({
+    _id: "",
+    assignedCountry: "",
+    role: "",
+  });
   useEffect(() => {
     // console.log("user", user);
     const getUserInfo = async () => {
@@ -56,7 +62,7 @@ export default function Home() {
         >
           Create new Data
         </button>
-        {createDataModel && (
+        {createDataModel && userInfo && (
           <CreateNewData
             userInfo={userInfo}
             setCreateDataModel={setCreateDataModel}

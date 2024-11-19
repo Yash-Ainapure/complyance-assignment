@@ -20,6 +20,6 @@ export const completeOnboarding = async () => {
     })
     return { message: res.publicMetadata }
   } catch (err) {
-    return { error: 'There was an error updating the user metadata.' }
+    return { error: 'There was an error updating the user metadata.', err }
   }
 }

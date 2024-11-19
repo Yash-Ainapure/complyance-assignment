@@ -12,12 +12,14 @@ interface MongooseCache {
 }
 
 declare global {
-  var mongoose: MongooseCache;
+  let mongoose: MongooseCache;
 }
 
+// @ts-expect-error deplyment
 let cached: MongooseCache = global.mongoose;
 
 if (!cached) {
+  // @ts-expect-error deplyment
   cached = global.mongoose = { conn: null, promise: null };
 }
 

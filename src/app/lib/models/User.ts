@@ -36,7 +36,10 @@ const UserSchema = new mongoose.Schema(
 
 // Validation for viewer role
 UserSchema.pre("save", function (next) {
-  if (this.role === "viewer" && this.assignedCountry.length === 0) {
+  if (
+    this.role === "viewer" &&
+    (!this.assignedCountry || this.assignedCountry.length === 0)
+  ) {
     next(new Error("Viewers must have at least one assigned country"));
   } else {
     next();
@@ -44,7 +47,7 @@ UserSchema.pre("save", function (next) {
 });
 
 // Method to check data access
-UserSchema.methods.canAccessData = function (data: { country: any }) {
+UserSchema.methods.canAccessData = function (data: { country: string }) {
   return (
     this.role === "admin" ||
     (this.role === "viewer" && this.assignedCountries.includes(data.country))
@@ -52,7 +55,7 @@ UserSchema.methods.canAccessData = function (data: { country: any }) {
 };
 
 // Method to check data modification
-UserSchema.methods.canModifyData = function (data: { country: any }) {
+UserSchema.methods.canModifyData = function (data: { country: string }) {
   return (
     this.role === "admin" ||
     (this.role === "viewer" && this.assignedCountries.includes(data.country))

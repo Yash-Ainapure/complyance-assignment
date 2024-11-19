@@ -7,7 +7,7 @@ import axios from "axios";
 
 export default function OnboardingComponent() {
   const [error, setError] = React.useState("");
-  const { user }: any = useUser();
+  const { user } = useUser();
   const router = useRouter();
   const [role, setRole] = React.useState("");
   const [assignedCountry, setAssignedCountry] = React.useState("");
