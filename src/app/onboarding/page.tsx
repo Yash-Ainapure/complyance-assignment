@@ -11,6 +11,7 @@ export default function OnboardingComponent() {
   const router = useRouter();
   const [role, setRole] = React.useState("");
   const [assignedCountry, setAssignedCountry] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
 
   console.log("userdhddh");
   console.log(user);
@@ -32,9 +33,8 @@ export default function OnboardingComponent() {
       role: role,
       assignedCountry: assignedCountry,
     };
-    console.log(data);
-
     try {
+      setLoading(true);
       const res = await axios.post("/api/createUser", JSON.stringify(data), {
         headers: {
           "Content-Type": "application/json",
@@ -54,23 +54,33 @@ export default function OnboardingComponent() {
       console.log("res", res);
     } catch (err) {
       console.error("err", err);
+    } finally {
+      setLoading(false);
     }
     return;
   };
   return (
-    <div>
-      <h1>Welcome to onboarding</h1>
-      <p>here we select your role and country for seamless experience</p>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Choose your Role</label>
+    <div className="flex flex-col gap-2 p-4 items-center justify-center min-h-screen">
+      <h1 className="font-semibold text-2xl underline">
+        Welcome to onboarding Screen
+      </h1>
+      <p>Here we select your role and country for seamless experience</p>
+      <p className="text-red-500">
+        ( This onboarding page occurs 1st time only while registering)
+      </p>
+      <form
+        className="flex flex-col gap-4 items-center justify-center"
+        onSubmit={handleSubmit}
+      >
+        <div className="flex items-center justify-center gap-2">
+          <label>Choose your Role:</label>
           <select
             required
             onChange={(event) => {
               event.preventDefault();
               setRole(event.target.value);
             }}
-            className="text-black"
+            className="text-white rounded-md bg-black p-2 "
             name=""
             id="role"
           >
@@ -80,14 +90,14 @@ export default function OnboardingComponent() {
           </select>
         </div>
         {role === "viewer" && (
-          <div>
+          <div className="flex items-center justify-center gap-2">
             <label>Choose your country</label>
             <select
               onChange={(event) => {
                 event.preventDefault();
                 setAssignedCountry(event.target.value);
               }}
-              className="text-black"
+              className="text-white rounded-md bg-black p-2 "
               name=""
               id="role"
             >
@@ -102,8 +112,8 @@ export default function OnboardingComponent() {
           </div>
         )}
         {error && <p className="text-red-600">Error: {error}</p>}
-        <button className="bg-white text-black p-2 rounded-md" type="submit">
-          Submit
+        <button className="bg-black text-white p-2 rounded-md" type="submit">
+          {loading ? "Submiting..." : "Submit"}
         </button>
       </form>
     </div>

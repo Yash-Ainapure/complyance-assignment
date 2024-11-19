@@ -11,6 +11,8 @@ const isPublicRoute = createRouteMatcher([
   "/api/getCountryData",
   "/api/updateData",
   "/api/getUserById",
+  "/api/updateAssignedCountry",
+  "/api/deleteData",
 ]);
 const isApiRoute = createRouteMatcher(["/api/createUser"]);
 

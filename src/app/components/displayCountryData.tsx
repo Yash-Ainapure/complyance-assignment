@@ -15,7 +15,7 @@ export default function DisplayCountryData({
   userInfo,
 }: DisplayCountryDataProps) {
   interface CountryData {
-    id: string;
+    _id: string;
     title: string;
     description: string;
     country: string;
@@ -32,15 +32,21 @@ export default function DisplayCountryData({
   >(null);
   const [updateDataModel, setUpdateDataModel] = useState<boolean>(false);
   const [updatingData, setUpdatingData] = useState<CountryData | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+
   useEffect(() => {
     const getCountryData = async () => {
       try {
+        setLoading(true);
+        setData(null);
         const res = await axios.post("/api/getCountryData", {
           country: userInfo.assignedCountry,
         });
         setData(res.data);
       } catch (error: unknown) {
         console.log("error fetching country data", error);
+      } finally {
+        setLoading(false);
       }
     };
     if (userInfo.role !== "admin") {
@@ -50,23 +56,30 @@ export default function DisplayCountryData({
 
   useEffect(() => {
     const getCountryData = async () => {
-      const res = await axios.post("/api/getCountryData", {
-        country: country,
-      });
-
-      const updatedData = await Promise.all(
-        res.data.map(async (d: CountryData) => {
-          let modifiedBy = "";
-          if (d.lastModifiedBy !== undefined) {
-            modifiedBy = (await getEmailById(d.lastModifiedBy)) || "none";
-          } else {
-            modifiedBy = "none";
-          }
-          const email = await getEmailById(d.createdBy);
-          return { ...d, email, modifiedBy };
-        })
-      );
-      setAdminCountryData(updatedData);
+      setLoading(true);
+      setAdminCountryData(null);
+      try {
+        const res = await axios.post("/api/getCountryData", {
+          country: country,
+        });
+        const updatedData = await Promise.all(
+          res.data.map(async (d: CountryData) => {
+            let modifiedBy = "";
+            if (d.lastModifiedBy !== undefined) {
+              modifiedBy = (await getEmailById(d.lastModifiedBy)) || "none";
+            } else {
+              modifiedBy = "none";
+            }
+            const email = await getEmailById(d.createdBy);
+            return { ...d, email, modifiedBy };
+          })
+        );
+        setAdminCountryData(updatedData);
+      } catch (error: unknown) {
+        console.log("error fetching country data", error);
+      } finally {
+        setLoading(false);
+      }
     };
     if (country && userInfo.role === "admin") {
       getCountryData();
@@ -84,9 +97,26 @@ export default function DisplayCountryData({
   };
 
   return (
-    <div className="bg-red-400 p-2 rounded-md flex flex-col gap-2">
+    <div className="bg-sky-300 p-2 rounded-md flex flex-col gap-2 w-full">
+      {userInfo.role === "admin" ? (
+        <p className="text-red-600">
+          As a admin you can now view all countries data and add,edit or delete
+          them
+        </p>
+      ) : (
+        <p className="text-red-700">
+          (you will be only able to view{" "}
+          <span className="font-semibold underline">
+            {userInfo.assignedCountry}&apos;s
+          </span>{" "}
+          data as you were assigned,to change your assigned country go to
+          profile )
+        </p>
+      )}
+
       {userInfo.role === "admin" ? (
         <select
+          className="p-2 bg-white rounded-md w-96"
           onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
             event.preventDefault();
             setCountry(event.target.value);
@@ -104,15 +134,22 @@ export default function DisplayCountryData({
         </select>
       ) : null}
 
+      {loading && <p>loading...</p>}
       {userInfo.role !== "admin" &&
         data &&
         data.map((d: CountryData) => {
           return (
-            <div className="bg-slate-400 p-2" key={d.id}>
-              <p>{d.id}</p>
-              <p>title: {d.title}</p>
-              <p>description: {d.description}</p>
-              <p>country: {d.country}</p>
+            <div className="bg-slate-400 p-2" key={d._id}>
+              <p>
+                <span className="font-semibold">title:</span> {d.title}
+              </p>
+              <p>
+                <span className="font-semibold">description:</span>{" "}
+                {d.description}
+              </p>
+              <p>
+                <span className="font-semibold">country:</span> {d.country}
+              </p>
             </div>
           );
         })}
@@ -121,9 +158,11 @@ export default function DisplayCountryData({
         adminCountryData &&
         adminCountryData.map((d: CountryData) => {
           return (
-            <div className="bg-slate-400 p-2" key={d.id}>
+            <div className="bg-slate-400 p-2" key={d._id}>
               <div className="flex justify-between">
-                <p>title: {d.title}</p>
+                <p>
+                  <span className="font-semibold">title:</span> {d.title}
+                </p>
                 <div className="flex gap-2">
                   <button
                     onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
@@ -136,10 +175,25 @@ export default function DisplayCountryData({
                     edit
                   </button>
                   <button
-                    onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                    onClick={async (e: React.MouseEvent<HTMLButtonElement>) => {
                       e.preventDefault();
-                      setUpdatingData(d);
-                      setUpdateDataModel(true);
+                      console.log("delete", d._id);
+                      const res = confirm(
+                        "are you sure you want to delete this data?"
+                      );
+                      if (res) {
+                        const result = await axios.delete(
+                          `/api/deleteData/?id=${d._id}`
+                        );
+                        if (result.status === 200) {
+                          alert("data deleted successfully");
+                          setAdminCountryData(
+                            adminCountryData.filter(
+                              (data) => data._id !== d._id
+                            )
+                          );
+                        }
+                      }
                     }}
                     className="cursor-pointer hover:text-red-600 font-semibold scale-[101%] bg-white p-2 rounded-md"
                   >
@@ -148,12 +202,23 @@ export default function DisplayCountryData({
                 </div>
               </div>
               <div className="flex justify-between">
-                <p>description: {d.description}</p>
-                <p>last modified by: {d.modifiedBy}</p>
+                <p>
+                  <span className="font-semibold">description:</span>{" "}
+                  {d.description}
+                </p>
+                <p>
+                  <span className="font-semibold">last modified by:</span>{" "}
+                  {d.modifiedBy}
+                </p>
               </div>
               <div className="flex justify-between">
-                <p>country: {d.country}</p>
-                <p>created by:{d.email}</p>
+                <p>
+                  <span className="font-semibold">country:</span> {d.country}
+                </p>
+                <p>
+                  <span className="font-semibold">created by:</span>
+                  {d.email}
+                </p>
               </div>
             </div>
           );
